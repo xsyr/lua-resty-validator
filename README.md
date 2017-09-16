@@ -17,48 +17,48 @@ lua vm 已经默默的处理了阻塞的IO操作,开发人员可以用写同步�
 ```
 
 location /validator_demo {
-		content_by_lua_block {
-				local v = require("resty.validator")
-				local cjson = require("cjson")
+    content_by_lua_block {
+        local v = require("resty.validator")
+        local cjson = require("cjson")
 
-				local user = {
-						id = {
-								type     = v.NUMBER,
-								required = true,
-						},
-						name = {
-								type     = v.STRING,
-								required = true,
-						},
-						addr = {
-								type     = v.OBJECT,
-								required = true,
-								struct = {
-										city = {
-												type      = v.STRING,
-												required  = true,
-												minlength = 2,
-										},
-										postcode = {
-												type      = v.STRING,
-												required  = true,
-												minlength = 6,
-												maxlength = 6,
-										}
-								}
-						}
-				}
+        local user = {
+            id = {
+                type     = v.NUMBER,
+                required = true,
+            },
+            name = {
+                type     = v.STRING,
+                required = true,
+            },
+            addr = {
+                type     = v.OBJECT,
+                required = true,
+                struct = {
+                    city = {
+                        type      = v.STRING,
+                        required  = true,
+                        minlength = 2,
+                    },
+                    postcode = {
+                        type      = v.STRING,
+                        required  = true,
+                        minlength = 6,
+                        maxlength = 6,
+                    }
+                }
+            }
+        }
 
-				ngx.req.read_body()
-				local body = ngx.req.get_body_data()
-				local json = cjson.decode(body)
-				local ok, user, err = v.bind(user, json)
-				if not ok then
-						ngx.say(err)
-				else
-						ngx.say(cjson.encode(user))
-				end
-		}
+        ngx.req.read_body()
+        local body = ngx.req.get_body_data()
+        local json = cjson.decode(body)
+        local ok, user, err = v.bind(user, json)
+        if not ok then
+            ngx.say(err)
+        else
+            ngx.say(cjson.encode(user))
+        end
+    }
 }
 
 
@@ -77,9 +77,7 @@ $ curl -d '{ "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://loc
 $ curl -d '{ "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
 'id' is required
 
-$ curl -d '{ "id" : 100, "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
-
-curl -d '{ "id" : 100, "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
+$ curl -d '{ "id" : 100, "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'y": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
 {"addr":{"city":"guangzhou","postcode":"510000"},"name":"xsyr","id":100}
 
 ```
