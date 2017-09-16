@@ -14,139 +14,74 @@ lua vm 已经默默的处理了阻塞的IO操作,开发人员可以用写同步�
 把 validator.lua 文件放入 openresty 安装目录的 `lualib/resty/` 下即可.
 
 # Demo
-```lua
+```
 
-local validator = require("resty.validator")
-local cjson = require("cjson")
+location /validator_demo {
+		content_by_lua_block {
+				local v = require("resty.validator")
+				local cjson = require("cjson")
 
-local bindings = {
-	appid = {
-		type = validator.NUMBER,
-		default = 0, -- 默认值(可选)，默认为 nil。禁止同时设置 required = true 和 default，否则发生无法预期的行为。
-		required = true, -- 是否必须（可选，默认为false）。禁止同时设置 required = true 和 default，否则发生无法预期的行为。
-		err_msg = "", -- 错误提示信息(可选)，如格式不正确
-		checker = function(val, field) return val > 0, "<error msg>" end -- 用于对字段的值进行校验，val的类型为 type 指定的类型所对应的lua类型（如: number, string, table）（可选）
-	},
-	name = {
-		type = validator.STRING,
-		default = "unknown", -- 默认值(可选)，默认为 nil
-		required = true,
-		maxlength = 20,
-		minlength = 1,
-		err_msg = "", -- 错误提示信息，如格式不正确(可选)
-		checker = function(val, field) return (val and #val > 5), "<error msg>" end
-	},
-	resources = {
-		type = validator.ARRAY,
-		required  = true,
-		maxlength = 20,
-		minlength = 1,
-		element = { -- 数组元素的结构
-            -- 数组元素的类型，如果为 NUMBER, STRING 则无需定义struct，
-            -- 否则如果为 OBJECT，需在 struct 定义object的结构。
-            type = validator.OBJECT, -- NUMBER or STRING or OBJECT
-            struct = {
-                type = {
-                    type = validator.STRING,
-                    required = true,
-                    err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-                    checker = function (val, field) return not ({ "audio", "album" })[val.lower()] end
-                },
-                id = {
-                    type = validator.NUMBER,
-                    err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-                    checker = function (val, field) return val > 0 end
-                },
-                hash = {
-                    type = validator.STRING,
-                    checker = function (val, field) if not is_empty(val) then return is_hash(val) else return false end end
-                },
-                name = {
-                    type = validator.STRING,
-                    default = ""
-                }
-            }
-		},
-		err_msg = "", -- 针对整个数组的错误提示信息，如长度小于 minlength 或大于 maxlength(可选)
-	},
-	module = {
-		type = validator.OBJECT,
-		required = true,
-		struct = {
-			type = {
-				type = validator.STRING,
-				require = true,
-				err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-				checker = function (val, field) return not ({ "audio", "album" })[val.lower()] end
-			},
-			id = {
-				type = validator.NUMBER,
-				err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-				checker = function (val, field) return val > 0 end
-			},
-			name = {
-				type = validator.STRING,
-				default = ""
-			}
-		},
-		checker = 	function (elem, field) -- 针对数组中每个元素的 checker
-                        -- TODO: 针对当前 object 的检查函数，只有在满足了object的每个成员的约束之后才会被调用
-					end,
-		err_msg = "", -- 针对整个数组的错误提示信息，如长度小于 minlength 或大于 maxlength(可选)
-	},
-	lists = {
-		type = validator.STRINGIFY_ARRAY, -- json 数组的字符串表示形式
-		required = true,
-		maxlength = 20,
-		minlength = 1,
-        element = {
-            -- 数组元素的类型，如果为 NUMBER, STRING 则无需定义struct，
-            -- 否则如果为 OBJECT，需在 struct 定义object的结构。
-            type = validator.OBJECT, -- NUMBER or STRING or OBJECT
-            struct = {
-                type = {
-                    type = validator.STRING,
-                    require = true,
-                    err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-                    checker = function (val, field) return not ({ "audio", "album" })[val.lower()] end
-                },
-                id = {
-                    type = validator.NUMBER,
-                    err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-                    checker = function (val, field) return val > 0 end
-                },
-                name = {
-                    type = validator.STRING,
-                    default = ""
-                }
-            }
-        },
-		checker = 	function (elem, field) -- 针对数组中每个元素的 checker
-                        -- TODO: 针对当前 object 的检查函数，只有在满足了object的每个成员的约束之后才会被调用
-					end,
-		err_msg = "", -- 针对整个数组的错误提示信息，如长度小于 minlength 或大于 maxlength(可选)
-	},
-	order = {
-		type = validator.STRINGIFY_OBJECT, -- json 对象的字符串表示形式
-		required = true,
-		struct = {
-			order_no = {
-				type = validator.NUMBER,
-				err_msg = "", -- 针对数组元素成员的错误提示信息，如格式不正确(可选)
-				checker = function (val, field) return val > 0 end
-			},
-			serial = {
-				type = validator.STRING,
-                required = true,
-				default = ""
-			}
-		},
-		checker = function (obj, field) -- 针对数组中每个元素的 checker
-                        -- TODO: 针对当前 object 的检查函数，只有在满足了object的每个成员的约束之后才会被调用
-					end,
-		err_msg = "", -- 针对整个数组的错误提示信息，如长度小于 minlength 或大于 maxlength(可选)
-	}
+				local user = {
+						id = {
+								type     = v.NUMBER,
+								required = true,
+						},
+						name = {
+								type     = v.STRING,
+								required = true,
+						},
+						addr = {
+								type     = v.OBJECT,
+								required = true,
+								struct = {
+										city = {
+												type      = v.STRING,
+												required  = true,
+												minlength = 2,
+										},
+										postcode = {
+												type      = v.STRING,
+												required  = true,
+												minlength = 6,
+												maxlength = 6,
+										}
+								}
+						}
+				}
+
+				ngx.req.read_body()
+				local body = ngx.req.get_body_data()
+				local json = cjson.decode(body)
+				local ok, user, err = v.bind(user, json)
+				if not ok then
+						ngx.say(err)
+				else
+						ngx.say(cjson.encode(user))
+				end
+		}
 }
+
+
+```
+
+```bash
+$ curl -d '{}' 'http://localhost/validator_demo'
+'addr' is required
+
+$ curl -d '{ "addr":{ "city": "guangzhou" } }' 'http://localhost/validator_demo'
+'addr.postcode' is required
+
+$ curl -d '{ "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
+'name' is required
+
+$ curl -d '{ "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
+'id' is required
+
+$ curl -d '{ "id" : 100, "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
+
+curl -d '{ "id" : 100, "name": "xsyr", "addr":{ "city": "guangzhou", "postcode": "510000" } }' 'http://localhost/validator_demo'
+{"addr":{"city":"guangzhou","postcode":"510000"},"name":"xsyr","id":100}
+
 ```
 
 ---

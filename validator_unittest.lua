@@ -1,15 +1,15 @@
 
-local lv = require("lv")
+local validator = require("resty.validator")
 local ut = require("Test.More")
 local cjson = require("cjson")
 
-local bind   = lv.bind
-local NUMBER = lv.NUMBER
-local STRING = lv.STRING
-local ARRAY  = lv.ARRAY
-local OBJECT = lv.OBJECT
-local STRINGIFY_ARRAY  = lv.STRINGIFY_ARRAY
-local STRINGIFY_OBJECT = lv.STRINGIFY_OBJECT
+local bind   = validator.bind
+local NUMBER = validator.NUMBER
+local STRING = validator.STRING
+local ARRAY  = validator.ARRAY
+local OBJECT = validator.OBJECT
+local STRINGIFY_ARRAY  = validator.STRINGIFY_ARRAY
+local STRINGIFY_OBJECT = validator.STRINGIFY_OBJECT
 
 
 local function number_required()
@@ -789,48 +789,56 @@ local function stringify_object()
 end
 
 
+local function run_test()
+  number_required()
+  number_nonrequired()
+  number_default()
+  number_err_msg()
+  number_checker()
+  number_string_input()
+  number_pre()
+  number_post()
 
-number_required()
-number_nonrequired()
-number_default()
-number_err_msg()
-number_checker()
-number_string_input()
-number_pre()
-number_post()
+  string_required()
+  string_nonrequired()
+  string_default()
+  string_err_msg()
+  string_checker()
+  string_minlength()
+  string_maxlength()
+  string_pre()
+  string_post()
 
-string_required()
-string_nonrequired()
-string_default()
-string_err_msg()
-string_checker()
-string_minlength()
-string_maxlength()
-string_pre()
-string_post()
+  object_required()
+  object_nonrequired()
+  object_default()
+  object_err_msg()
+  object_checker()
+  object_pre()
+  object_post()
 
-object_required()
-object_nonrequired()
-object_default()
-object_err_msg()
-object_checker()
-object_pre()
-object_post()
+  array_required()
+  array_nonrequired()
+  array_default()
+  array_err_msg()
+  array_checker()
+  array_minlength()
+  array_maxlength()
+  array_pre()
+  array_post()
+  array_elem_pre()
+  array_elem_post()
+  array_string()
+  array_number()
+  array_object()
 
-array_required()
-array_nonrequired()
-array_default()
-array_err_msg()
-array_checker()
-array_minlength()
-array_maxlength()
-array_pre()
-array_post()
-array_elem_pre()
-array_elem_post()
-array_string()
-array_number()
-array_object()
+  stringify_array()
+  stringify_object()
+end
 
-stringify_array()
-stringify_object()
+local ok, err = pcall(run_test)
+if not ok then
+  ngx.say('test failed: ' .. err)
+else
+  ngx.say('test pass')
+end
