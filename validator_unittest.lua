@@ -789,7 +789,7 @@ local function stringify_object()
 end
 
 
-local function run_test()
+local function run_all_test()
   number_required()
   number_nonrequired()
   number_default()
@@ -836,9 +836,15 @@ local function run_test()
   stringify_object()
 end
 
-local ok, err = pcall(run_test)
-if not ok then
-  ngx.say('test failed: ' .. err)
-else
-  ngx.say('test pass')
+local function run()
+  local ok, err = pcall(run_all_test)
+  if not ok then
+    ngx.say('test failed: ' .. err)
+  else
+    ngx.say('test pass')
+  end
 end
+
+return {
+  run = run
+}
